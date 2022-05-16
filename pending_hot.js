@@ -1,15 +1,13 @@
 var { BigNumber } = require('ethers')
-var axios = require('axios');
-var tunnel = require('tunnel');
-var Web3 = require('web3');
-
+var { web3Ws } = require('./providerWs');
+var { getTokenInfo } = require('./tokenInfo')
+var fs = require('fs')
 
 var JaguarDb = require('./lib/jaguarDb').JaguarDb;
 var options = {logging: true};
 var db = new JaguarDb(options);
 
 
-var web3Ws;
 var subscription;
 
 
@@ -17,37 +15,6 @@ const GWEI = BigNumber.from(10).pow(9)
 const gasPriceInGwei = GWEI.mul(1000)
 
 var data = []
-
-const WEBSOCKET_PROVIDER_LINK = `<YOUR_WEBSOCKET_PROVIDER>`;
-
-const optionsWs = {
-    timeout: 30000, // ms
-  
-    // Useful for credentialed urls, e.g: ws://username:password@localhost:8546
-    // headers: {
-    //   authorization: 'Basic username:password'
-    // },
-  
-    clientConfig: {
-      // Useful if requests are large
-      maxReceivedFrameSize: 100000000,   // bytes - default: 1MiB
-      maxReceivedMessageSize: 100000000, // bytes - default: 8MiB
-  
-      // Useful to keep a connection alive
-      keepalive: true,
-      keepaliveInterval: 60000 // ms
-    },
-  
-    // Enable auto reconnection
-    reconnect: {
-        auto: true,
-        delay: 5000, // ms
-        maxAttempts: 5,
-        onTimeout: false
-    }
-  };
-
-web3Ws = new Web3(new Web3.providers.WebsocketProvider(WEBSOCKET_PROVIDER_LINK,optionsWs));
 
 
 let listenOnce = function () {
@@ -91,48 +58,12 @@ let listenOnce = function () {
     return subscription;
 }
 
-async function getTokenInfo( tokenAddr ) {
-    let token_abi_ask = 'https://api.etherscan.io/api?module=contract&action=getabi&address='+tokenAddr+'&apikey=AKI6MKB4KHB37QZGKJ9F81JNTTYZE3ABY2'
-    const agent = tunnel.httpsOverHttp({
-        proxy: {
-            host: 'localhost',
-            port: 1081,
-        },
-      });
-    var response = await axios.get( token_abi_ask ,{
-        httpsAgent: agent,
-    })
-
-    if ( typeof(response) == 'object' )
-    var token_abi = response.data.result;
-    var m =  token_abi.substring(0,1)
-    if ( m != 'M' && m != 'I' && m !='C' ){//escape JSON format error
-      try{
-        var token_contract = new web3Ws.eth.Contract(JSON.parse(token_abi), tokenAddr);
-        if ( typeof(token_contract.methods.decimals) == 'function' )     
-        
-        //get token info           
-        var decimals = await token_contract.methods.decimals().call();
-        if ( typeof(token_contract.methods.symbol) == 'function')
-        var symbol =  await token_contract.methods.symbol().call(); 
-        if ( typeof(token_contract.methods.name) == 'function')
-        var name = await token_contract.methods.name().call() 
-
-        return {'address': tokenAddr, 'name': name, 'symbol': symbol, 'decimals': decimals, 'abi': token_abi, 'token_contract': token_contract}
-      
-    }
-      catch(e){
-        console.log(e)
-      } 
-    } 
-}
-
 const _listen = async () => {
     let tips = listenOnce();
     console.log('Conneted to Robot.')
     let n = 0
     // Web3 subscription times out at 60 secs. Close and reopen at 50 secs.
-    if ( n < 24 ){ // Max times 24
+    if ( n <= 24 ){ // Max times 24
         setInterval( () => {
             tips.unsubscribe( (error, success) => {
                 if(error) {
@@ -154,7 +85,7 @@ const _listen = async () => {
                     })
                     
                        
-                    let hotArr = []
+                    var tables = []    
                     
                   
                     db.connect('./data', async function(err) {//Connect to local DB
@@ -199,26 +130,47 @@ const _listen = async () => {
                             }                       
                         }       
                  
-    
+                                          
+
                         for ( let key in sortFrequencyAddr) { 
-                            if ( key < 30 ){ //The number of items to show 
+                            if ( key < 5 ){ //The number of items to show 
                                 var query = {content: sortFrequencyAddr[key]};
+                                var tag
                                 if ( frequency[sortFrequencyAddr[key]] > 2 ){//Show up frequency
                                     var tagFunction = db.find(query,{},function(e,dc){})        //Check        
                                     if (tagFunction.length == 0) tag = "Check it!"
                                     if (tagFunction.length > 0) tag = tagFunction[0].title
                                 }                
-                                if ( frequency[sortFrequencyAddr[key]] <= 2) tag = "Check it!"// Do not show up frequency
-                                hotArr.push(frequency[sortFrequencyAddr[key]],sortFrequencyAddr[key],tag) 
+                                if ( frequency[sortFrequencyAddr[key]] <= 2) tag = "Check it!"// Do not show up frequency                 
+                                
+                                var table = { 
+                                    "fre": frequency[sortFrequencyAddr[key]], 
+                                    "address": sortFrequencyAddr[key],
+                                    "tag": tag
+                                }  
+
+                                tables.push(table)                              
                             }                                              
-                        }                  
-                        console.log(hotArr)      
-                    })                
-                }
+                        }  
+                        console.log(tables)     
+                        if ( tables.length !== 0 ){  
+                            tables.push( {"time": new Date()}, { "id": n } )                         
+                            var content  = JSON.stringify(tables)
+                            fs.writeFile(`/media/loophe/MemPool/pending/pending_hot/tables/table${n}.json`, content, err => {
+                                if (err) {
+                                console.error(err)
+                                return
+                                }
+                                //file written successfully
+                            })
+                        }                                 
+                    })           
+                }                
             });
+
             tips = listenOnce();
-            n++
-        }, (1800 * 1000));// Every half hour
+            n++;
+        }, (30 * 1000));// Every half hour
     }else{
         process.exit()   
     }   
