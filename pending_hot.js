@@ -1,13 +1,12 @@
+var fs = require('fs')
+var path = require('path')
 var { BigNumber } = require('ethers')
 var { web3Ws } = require('./providerWs');
 var { getTokenInfo } = require('./tokenInfo')
-var fs = require('fs')
 
 var JaguarDb = require('./lib/jaguarDb').JaguarDb;
 var options = {logging: true};
 var db = new JaguarDb(options);
-
-
 var subscription;
 
 
@@ -155,8 +154,8 @@ const _listen = async () => {
                         console.log(tables)     
                         if ( tables.length !== 0 ){  
                             tables.push( {"time": new Date()}, { "id": n } )                         
-                            var content  = JSON.stringify(tables)
-                            fs.writeFile(`/media/loophe/MemPool/pending/pending_hot/tables/table${n}.json`, content, err => {
+                            var content  = JSON.stringify(tables)                           
+                                fs.writeFile(path.join(__dirname, `tables/table${n}.json`), content, err => {
                                 if (err) {
                                 console.error(err)
                                 return
