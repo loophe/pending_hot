@@ -95,7 +95,7 @@ const _listen = async () => {
                         }
     
                         for ( let key in sortFrequencyAddr ) {
-                            if ( key < 50 && frequency[sortFrequencyAddr[key]] > 1 ){ //Only update the most showup addresses of front 50 on board and show up fre need acceed 10 
+                            if ( key < 50 && frequency[sortFrequencyAddr[key]] > 10 ){ //Only update the most showup addresses of front 50 on board and show up fre need acceed 10 
                                 var token_info = await getTokenInfo(sortFrequencyAddr[key])
                                 if ( typeof(token_info) != 'undefined' && typeof(token_info.name) != 'undefined' && typeof(token_info.symbol) != 'undefined' ){
                                     var query = {content: sortFrequencyAddr[key]}
@@ -132,15 +132,15 @@ const _listen = async () => {
                                           
 
                         for ( let key in sortFrequencyAddr) { 
-                            if ( key < 5 ){ //The number of items to show 
+                            if ( key < 30 ){ //The number of items to show 
                                 var query = {content: sortFrequencyAddr[key]};
                                 var tag
-                                if ( frequency[sortFrequencyAddr[key]] > 2 ){//Show up frequency
+                                if ( frequency[sortFrequencyAddr[key]] > 10 ){//Show up frequency
                                     var tagFunction = db.find(query,{},function(e,dc){})        //Check        
                                     if (tagFunction.length == 0) tag = "Check it!"
                                     if (tagFunction.length > 0) tag = tagFunction[0].title
                                 }                
-                                if ( frequency[sortFrequencyAddr[key]] <= 2) tag = "Check it!"// Do not show up frequency                 
+                                if ( frequency[sortFrequencyAddr[key]] <= 10) tag = "Check it!"// Do not show up frequency                 
                                 
                                 var table = { 
                                     "fre": frequency[sortFrequencyAddr[key]], 
