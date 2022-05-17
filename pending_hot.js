@@ -14,7 +14,7 @@ const GWEI = BigNumber.from(10).pow(9)
 const gasPriceInGwei = GWEI.mul(1000)
 
 var data = []
-
+var tableInOne = []
 
 let listenOnce = function () {
 
@@ -153,9 +153,10 @@ const _listen = async () => {
                         }  
                         console.log(tables)     
                         if ( tables.length !== 0 ){  
-                            tables.push( {"time": new Date()}, { "id": n } )                         
-                            var content  = JSON.stringify(tables)                           
-                                fs.writeFile(path.join(__dirname, `tables/table${n}.json`), content, err => {
+                            
+                            tableInOne.push( {"time": new Date(), "id": n , tables })                         
+                            var content  = JSON.stringify(tableInOne)                           
+                                fs.writeFile(path.join(__dirname, `tables/table.json`), content, err => {
                                 if (err) {
                                 console.error(err)
                                 return
@@ -169,7 +170,7 @@ const _listen = async () => {
 
             tips = listenOnce();
             n++;
-        }, (30 * 1000));// Every half hour
+        }, (1800 * 1000));// Every half hour
     }else{
         process.exit()   
     }   
