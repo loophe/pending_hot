@@ -1,5 +1,8 @@
 node_modules/
 data/*
+data0518/
 tables/*
 providerWs.js
 fs.js
+find.js
+index.html

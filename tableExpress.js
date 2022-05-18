@@ -36,12 +36,13 @@ app.get('/', function(req, res){
         
             var table = obj.tables
             for ( i = 0; i < table.length; i++ ){
-                var tag = "<a href=/>" + table[i].tag +"</a>"
+                var address = table[i].address
+                var tag = `<a href=https://etherscan.io/address/${address}>` + table[i].tag +"</a>"
                 html += '<p>' + 
                 // '<p>Time: ' + dataJ[dataJ.length-2].time + '</p><br/>' +
                 // '<p>id: ' + dataJ[dataJ.length-1].id + '</p><br/>' +
                 '<p>Frequency : \t' + table[i].fre + '</p>' +
-                '<p>Address : \t' + table[i].address + '</p>' +
+                '<p>Address : \t' + address + '</p>' +
                 '<p>Tag : \t' + tag + '</p>' +
                 // '<b>title:</b> ' + url + '<br/>' +  
                 '</p>';
@@ -54,5 +55,5 @@ app.get('/', function(req, res){
 });
 
 
-console.log("Server started http://localhost:3000");
-app.listen(3000);
+console.log("Server started http://localhost:4500");
+app.listen(4500);
